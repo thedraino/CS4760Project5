@@ -37,14 +37,121 @@ int totalSafeStateChecks;
 int totalResourcesReleased;
 int totalProcessesTerminated;
 
-/**********************************************/
-/*************** Main Function ****************/
-/**********************************************/
+/*************************************************************************************************************/
+/******************************************* Start of Main Function ******************************************/
+/*************************************************************************************************************/
+
 int main ( int argc, char *argv[] ) {
-	printf ( "Hello, from OSS.\n" );
+	
+	int i; 
+	int numberOfLines = 0;	// Tracks the number of lines being written to the file
+	srand ( time ( NULL ) );	// Seed for OSS to generate random numbers when necessary
+	char fileName[10] = "prog5.log";	// Name of logfile that will be written to through the program
+	
+
+	// Creation of shared memory for simulated clock and block process array
+	shmClockKey = 1993;
+	if ( ( shmClockID = shmget ( shmClockKey, ( 2 * ( sizeof ( unsigned int ) ) ), IPC_CREAT | 0666 ) ) == -1 ) {
+		perror ( "OSS: Failure to create shared memory space for simulated clock." );
+		return 1;
+	}
+
+	shmBlockedKey = 1994;
+	if ( ( shmBlockedID = shmget ( shmBlockedKey, ( 100 * ( sizeof ( int ) ) ), IPC_CREAT | 0666 ) ) == -1 ) {
+		perror ( "OSS: Failure to create shared memory space for blocked USER process array." );
+		return 1;
+	}
+	
+	// Attach to and initialize shared memory for clock and blocked process array
+	if ( ( shmClock = (unsigned int *) shmat ( shmClockID, NULL, 0 ) ) < 0 ) {
+		perror ( "OSS: Failure to attach to shared memory space for simulated clock." );
+		return 1;
+	}
+	shmClock[0] = 0; // Will hold the seconds value for the simulated clock
+	shmClock[1] = 0; // Will hold the nanoseconds value for the simulated clock
+
+	if ( ( shmBlocked = (int *) shmat ( shmBlockedID, NULL, 0 ) ) < 0 ) {
+		perror ( "OSS: Failure to attach to shared memory space for simulated clock." );
+		return 1;
+	}
+	for ( i = 0; i < 100; ++i ) {
+		shmBlocked[i] = 0;
+	}
+	
+	// Creation of message queue
+	messageKey = 1996;
+	if ( ( messageID = msgget ( messageKey, IPC_CREAT | 0666 ) ) == -1 ) {
+		perror ( "OSS: Failure to create the message queue." );
+		return 1;
+	}
+
+
+	/* Creation of different data tables */
+
+	// Table holding the total resources in the system.
+	// Number of each resource is a random number between 1-10 (inclusive)
+	int totalResourceTable[20]; 
+	for ( i = 0; i < 20; ++i ) {
+		totalResourceTable[i] = ( rand() % ( 10 - 1 + 1 ) + 1 );
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+	// Detach from and Delete shared memory segments / message queue
+	shmdt ( shmClock );
+	shmdt ( shmBlocked );
+	
+	msgctl ( messageID, IPC_RMID, NULL ); 
+	shmctl ( shmClockID, IPC_RMID, NULL );
+	shmctl ( shmBlockedID, IPC_RMID, NULL );
 
 	return 0;
 }
+
+/***************************************************************************************************************/
+/******************************************* End of Main Function **********************************************/
+/***************************************************************************************************************/
 
 // Function to create a queue of given capacity.
 // It initializes size of queue as 0.
