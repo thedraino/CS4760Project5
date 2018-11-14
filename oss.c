@@ -244,7 +244,7 @@ int main ( int argc, char *argv[] ) {
 					       intBuffer19, intBuffer20, NULL );
 					
 					exit ( 127 );
-				}
+				} // End of child process logic for OSS
 				
 				// In the parent process...
 				j++;
