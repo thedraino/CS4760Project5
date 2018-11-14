@@ -222,6 +222,7 @@ int main ( int argc, char *argv[] ) {
 			wait ( 0 );
 			j--;
 		} // End inner while loop
+		incrementClock ( shmClock );
 	} // End main loop
 
 	// Detach from and Delete shared memory segments / message queue
