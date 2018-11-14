@@ -43,11 +43,24 @@ int totalProcessesTerminated;
 
 int main ( int argc, char *argv[] ) {
 	
-	int i; 
+	int i;	// Index variable to use in loops
 	int numberOfLines = 0;	// Tracks the number of lines being written to the file
 	srand ( time ( NULL ) );	// Seed for OSS to generate random numbers when necessary
 	char fileName[10] = "prog5.log";	// Name of logfile that will be written to through the program
 	unsigned int newProcessTime[2] = { 0, 0 };	// Initial value for time at which a new process shoudld be created	
+	
+
+	// Setup signal handling 
+	int killTimer = 2;	// Value to control how many real-life seconds program can run for
+	alarm ( killTimer );	// Sets the timer alarm based on value of killTimer
+
+	if ( signal ( SIGINT, handle ) == SIG_ERR ) {
+		perror ( "OSS: ctrl-c signal failed." );
+	}
+
+	if ( signal ( SIGALRM, handle ) == SIG_ERR ) {
+		perror ( "OSS: alarm signal failed." );
+	}
 
 	// Creation of shared memory for simulated clock and block process array
 	shmClockKey = 1993;
@@ -121,6 +134,7 @@ int main ( int argc, char *argv[] ) {
 	for ( i = 0; i < 100; ++i ) {
 		requestedResourceTable[i] = -1;
 	}
+	
 
 	// Detach from and Delete shared memory segments / message queue
 	terminateIPC();
@@ -131,6 +145,18 @@ int main ( int argc, char *argv[] ) {
 /***************************************************************************************************************/
 /******************************************* End of Main Function **********************************************/
 /***************************************************************************************************************/
+
+// Function for signal handling.
+// Handles ctrl-c from keyboard or eclipsing 2 real life seconds in run-time.
+void handle ( int sig_num ) {
+	if ( sig_num == SIGINT || sig_num == SIGALRM ) {
+		printf ( "Signal to terminate was received.\n" );
+		terminateIPC();
+		kill ( 0, SIGKILL );
+		wait ( NULL );
+		exit ( 0 );
+	}
+}
 
 // Function that increments the clock by some amount of time at different points. 
 // Also makes sure that nanoseconds are converted to seconds when appropriate.
