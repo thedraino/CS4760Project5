@@ -37,20 +37,27 @@ int totalSafeStateChecks;
 int totalResourcesReleased;
 int totalProcessesTerminated;
 
+FILE *fp;	// Used for opening and writing to filename described below
+
 /*************************************************************************************************************/
 /******************************************* Start of Main Function ******************************************/
 /*************************************************************************************************************/
 
 int main ( int argc, char *argv[] ) {
 	
-	int i;	// Index variable to use in loops
-	int numberOfLines = 0;	// Tracks the number of lines being written to the file
+	int i, j;	// Index variables to use in loops
 	srand ( time ( NULL ) );	// Seed for OSS to generate random numbers when necessary
-	char fileName[10] = "prog5.log";	// Name of logfile that will be written to through the program
-	unsigned int newProcessTime[2] = { 0, 0 };	// Initial value for time at which a new process shoudld be created	
+	unsigned int newProcessTime[2] = { 0, 0 };	// Initial value for time at which a new process shoudld be created
+	int createdProcesses = 0;	// Tracks the number of processes that have been created
+	int maxRunningProcesses = 18;	// Controls how many processes are allow to be alive at any given time
+	int totalProcessLimit = 100;	// Controls how many processes are allowed to be created over the life of the program
 	
-
-	// Setup signal handling 
+	/* Output file info */
+	int numberOfLines = 0;	// Tracks the number of lines being written to the file
+	char logName[10] = "prog5.log";	// Name of logfile that will be written to through the program
+	fp = fopen ( logName, "w+" );
+	
+	/* Signal handling */ 
 	int killTimer = 2;	// Value to control how many real-life seconds program can run for
 	alarm ( killTimer );	// Sets the timer alarm based on value of killTimer
 
@@ -62,7 +69,8 @@ int main ( int argc, char *argv[] ) {
 		perror ( "OSS: alarm signal failed." );
 	}
 
-	// Creation of shared memory for simulated clock and block process array
+	/* Shared memory */
+	// Creation of shared memory for simulated clock and block process array 
 	shmClockKey = 1993;
 	if ( ( shmClockID = shmget ( shmClockKey, ( 2 * ( sizeof ( unsigned int ) ) ), IPC_CREAT | 0666 ) ) == -1 ) {
 		perror ( "OSS: Failure to create shared memory space for simulated clock." );
@@ -70,7 +78,7 @@ int main ( int argc, char *argv[] ) {
 	}
 
 	shmBlockedKey = 1994;
-	if ( ( shmBlockedID = shmget ( shmBlockedKey, ( 100 * ( sizeof ( int ) ) ), IPC_CREAT | 0666 ) ) == -1 ) {
+	if ( ( shmBlockedID = shmget ( shmBlockedKey, ( totalProcessLimit * ( sizeof ( int ) ) ), IPC_CREAT | 0666 ) ) == -1 ) {
 		perror ( "OSS: Failure to create shared memory space for blocked USER process array." );
 		return 1;
 	}
@@ -92,7 +100,7 @@ int main ( int argc, char *argv[] ) {
 	//  will get flipped to 1 to indicate that it is blocked. 
 	// The flag will be flipped back to 0 once it is no longer blocked and has been
 	//  granted its requested resource.
-	for ( i = 0; i < 100; ++i ) {
+	for ( i = 0; i < totalProcessLimit; ++i ) {
 		shmBlocked[i] = 0;
 	}
 	
@@ -115,23 +123,23 @@ int main ( int argc, char *argv[] ) {
 
 	// Table storing the max claims of each resource for each process.
 	// Each row will be updated by on the index of created process upon creation by OSS.
-	int maxClaimTable[100][20];
+	int maxClaimTable[totalProcessLimit][20];
 
 	// Table storing the amount of each resource currently allocated to each process.
 	// Updated by OSS whenever resources are granted or released. 
-	int allocatedTable[100][20];
+	int allocatedTable[totalProcessLimit][20];
 
 	// Table storing the amount of resources currently available to the system.
 	// Updated by OSS whenever resources are granted or released. 
 	// (Values are the difference of total resources and currently allocated resources.
-	int availableResourcesTable[100][20];
+	int availableResourcesTable[totalProcessLimit][20];
 
 	// Table storing the requested resource if the process's request was blocked. 
 	// The resource number is stored at the index of the associated process. 
 	// OSS stores this value if it is going to put the process in the blocked queue. 
 	// OSS resets the value to -1 if the process is unblocked and then granted the resource. 
-	int requestedResourceTable[100];
-	for ( i = 0; i < 100; ++i ) {
+	int requestedResourceTable[totalProcessLimit];
+	for ( i = 0; i < totalProcessLimit; ++i ) {
 		requestedResourceTable[i] = -1;
 	}
 	
@@ -170,6 +178,8 @@ void incrementClock ( unsigned int shmClock[] ) {
 
 // Function to terminate all shared memory and message queue up completion or to work with signal handling
 void terminateIPC() {
+	fclose ( fp );
+	
 	shmdt ( shmClock );
 	shmdt ( shmBlocked );
 
