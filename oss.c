@@ -74,6 +74,11 @@ int main ( int argc, char *argv[] ) {
 		perror ( "OSS: Failure to attach to shared memory space for simulated clock." );
 		return 1;
 	}
+	// This table has index to correspond with each USER process. 
+	// If the process is ever blocked by OSS, that flag at its corresponding index
+	//  will get flipped to 1 to indicate that it is blocked. 
+	// The flag will be flipped back to 0 once it is no longer blocked and has been
+	//  granted its requested resource.
 	for ( i = 0; i < 100; ++i ) {
 		shmBlocked[i] = 0;
 	}
@@ -88,56 +93,35 @@ int main ( int argc, char *argv[] ) {
 
 	/* Creation of different data tables */
 
-	// Table holding the total resources in the system.
-	// Number of each resource is a random number between 1-10 (inclusive)
+	// Table storing the total resources in the system.
+	// Number of each resource is a random number between 1-10 (inclusive).
 	int totalResourceTable[20]; 
 	for ( i = 0; i < 20; ++i ) {
 		totalResourceTable[i] = ( rand() % ( 10 - 1 + 1 ) + 1 );
 	}
 
+	// Table storing the max claims of each resource for each process.
+	// Each row will be updated by on the index of created process upon creation by OSS.
+	int maxClaimTable[100][20];
 
+	// Table storing the amount of each resource currently allocated to each process.
+	// Updated by OSS whenever resources are granted or released. 
+	int allocatedTable[100][20];
 
+	// Table storing the amount of resources currently available to the system.
+	// Updated by OSS whenever resources are granted or released. 
+	// (Values are the difference of total resources and currently allocated resources.
+	int availableResourcesTable[100][20];
 
+	// Table storing the requested resource if the process's request was blocked. 
+	// The resource number is stored at the index of the associated process. 
+	// OSS stores this value if it is going to put the process in the blocked queue. 
+	// OSS resets the value to -1 if the process is unblocked and then granted the resource. 
+	int requestedResourceTable[100];
+	for ( i = 0; i < 100; ++i ) {
+		requestedResourceTable[i] = -1;
+	}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	
 	// Detach from and Delete shared memory segments / message queue
 	shmdt ( shmClock );
 	shmdt ( shmBlocked );
