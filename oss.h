@@ -22,6 +22,10 @@
 #include <sys/time.h>
 #include <stdbool.h>
 
+/* Macros */
+#define maxProcesses 18
+#define maxResources 20
+
 /* Structure(s) */
 // Structure used in the message queue 
 typedef struct {
