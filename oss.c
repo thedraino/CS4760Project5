@@ -205,13 +205,50 @@ int main ( int argc, char *argv[] ) {
 				
 				// In the child process...
 				if ( pid == 0 ) {
-					//exec
+					// 21 integer buffers to convert process index and resource vector to string.
+					// Once converted, all of the buffers will be passed to USER with execl.
+					char intBuffer0[3], intBuffer1[3], intBuffer2[3], intBuffer3[3]intBuffer4[3];
+					char intBuffer5[3], intBuffer6[3], intBuffer7[3], intBuffer8[3]intBuffer9[3];
+					char intBuffer10[3], intBuffer11[3], intBuffer12[3], intBuffer13[3]intBuffer14[3];
+					char intBuffer15[3], intBuffer16[3], intBuffer17[3], intBuffer18[3]intBuffer19[3];
+					char intBuffer20[3];
+					
+					// The buffer number corresponds with that resource in the maxClaimTable.
+					sprintf ( intBuffer0, "%d", maxClaimTable[processIndex][0] );
+					sprintf ( intBuffer1, "%d", maxClaimTable[processIndex][1] );
+					sprintf ( intBuffer2, "%d", maxClaimTable[processIndex][2] );
+					sprintf ( intBuffer3, "%d", maxClaimTable[processIndex][3] );
+					sprintf ( intBuffer4, "%d", maxClaimTable[processIndex][4] );
+					sprintf ( intBuffer5, "%d", maxClaimTable[processIndex][5] );
+					sprintf ( intBuffer6, "%d", maxClaimTable[processIndex][6] );
+					sprintf ( intBuffer7, "%d", maxClaimTable[processIndex][7] );
+					sprintf ( intBuffer8, "%d", maxClaimTable[processIndex][8] );
+					sprintf ( intBuffer9, "%d", maxClaimTable[processIndex][9] );
+					sprintf ( intBuffer10, "%d", maxClaimTable[processIndex][10] );
+					sprintf ( intBuffer11, "%d", maxClaimTable[processIndex][11] );
+					sprintf ( intBuffer12, "%d", maxClaimTable[processIndex][12] );
+					sprintf ( intBuffer13, "%d", maxClaimTable[processIndex][13] );
+					sprintf ( intBuffer14, "%d", maxClaimTable[processIndex][14] );
+					sprintf ( intBuffer15, "%d", maxClaimTable[processIndex][15] );
+					sprintf ( intBuffer16, "%d", maxClaimTable[processIndex][16] );
+					sprintf ( intBuffer17, "%d", maxClaimTable[processIndex][17] );
+					sprintf ( intBuffer18, "%d", maxClaimTable[processIndex][18] );
+					sprintf ( intBuffer19, "%d", maxClaimTable[processIndex][19] );
+					sprintf ( intBuffer20, "%d", processIndex );
+					
+					// Exec to USER passing the appropriate information
+					execl ( "./user", "user", intBuffer0, intBuffer1, intBuffer2, intBuffer3,
+					       intBuffer4, intBuffer5, intBuffer6, intBuffer7, intBuffer8, 
+					       intBuffer9, intBuffer10, intBuffer11, intBuffer12, intBuffer13, 
+					       intBuffer14, intBuffer15, intBuffer16, intBuffer17, intBuffer18,
+					       intBuffer19, intBuffer20, NULL );
+					
 					exit ( 127 );
 				}
 				
-				// Still in parent process...
+				// In the parent process...
 				j++;
-				createdProcesses;
+				createdProcesses++;
 			}
 			else {
 			// Check for message
