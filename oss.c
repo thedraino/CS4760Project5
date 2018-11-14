@@ -26,9 +26,9 @@ int rear ( Queue* queue );
 // Other Prototype Functions
 void calculateNeed ( int need[maxProcesses][maxResources], int maximum[maxProcesses][maxResources], int allot[maxProcesses][maxResources] );
 void isSafeState ( int processes[], int available[], int maximum[][maxResources], int allot[][maxResources] );
-void nanosecondConverter ( unsigned int shmClock[] );
+void incrementClock ( unsigned int shmClock[] );
 void printAllocatedResourcesTable();
-void terminateIPCObjects();
+void terminateIPC();
 
 // Variables to keep statistics over the course of the program run
 int totalResourcesRequested;
@@ -47,7 +47,7 @@ int main ( int argc, char *argv[] ) {
 	int numberOfLines = 0;	// Tracks the number of lines being written to the file
 	srand ( time ( NULL ) );	// Seed for OSS to generate random numbers when necessary
 	char fileName[10] = "prog5.log";	// Name of logfile that will be written to through the program
-	
+	unsigned int newProcessTime[2] = { 0, 0 };	// Initial value for time at which a new process shoudld be created	
 
 	// Creation of shared memory for simulated clock and block process array
 	shmClockKey = 1993;
@@ -123,12 +123,7 @@ int main ( int argc, char *argv[] ) {
 	}
 
 	// Detach from and Delete shared memory segments / message queue
-	shmdt ( shmClock );
-	shmdt ( shmBlocked );
-	
-	msgctl ( messageID, IPC_RMID, NULL ); 
-	shmctl ( shmClockID, IPC_RMID, NULL );
-	shmctl ( shmBlockedID, IPC_RMID, NULL );
+	terminateIPC();
 
 	return 0;
 }
@@ -136,6 +131,26 @@ int main ( int argc, char *argv[] ) {
 /***************************************************************************************************************/
 /******************************************* End of Main Function **********************************************/
 /***************************************************************************************************************/
+
+// Function that increments the clock by some amount of time at different points. 
+// Also makes sure that nanoseconds are converted to seconds when appropriate.
+void incrementClock ( unsigned int shmClock[] ) {
+	int processingTime = 5000; // Can be changed to adjust how much the clock is incremented.
+	shmClock[1] += processingTime;
+
+	shmClock[0] += shmClock[1] / 1000000000;
+	shmClock[1] = shmClock[1] % 1000000000;
+}
+
+// Function to terminate all shared memory and message queue up completion or to work with signal handling
+void terminateIPC() {
+	shmdt ( shmClock );
+	shmdt ( shmBlocked );
+
+	msgctl ( messageID, IPC_RMID, NULL );
+	shmctl ( shmClockID, IPC_RMID, NULL );
+	shmctl ( shmBlockedID, IPC_RMID, NULL );
+}
 
 // Function to create a queue of given capacity.
 // It initializes size of queue as 0.
