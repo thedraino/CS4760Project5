@@ -55,7 +55,7 @@ int main ( int argc, char *argv[] ) {
 	/* Output file info */
 	int numberOfLines = 0;	// Tracks the number of lines being written to the file
 	char logName[10] = "prog5.log";	// Name of logfile that will be written to through the program
-	fp = fopen ( logName, "w+" );
+	fp = fopen ( logName, "w+" );	// Opens file for writing
 	
 	/* Signal handling */ 
 	int killTimer = 2;	// Value to control how many real-life seconds program can run for
@@ -113,7 +113,6 @@ int main ( int argc, char *argv[] ) {
 
 
 	/* Creation of different data tables */
-
 	// Table storing the total resources in the system.
 	// Number of each resource is a random number between 1-10 (inclusive).
 	int totalResourceTable[20]; 
@@ -123,16 +122,32 @@ int main ( int argc, char *argv[] ) {
 
 	// Table storing the max claims of each resource for each process.
 	// Each row will be updated by on the index of created process upon creation by OSS.
+	// Initialize to 0.
 	int maxClaimTable[totalProcessLimit][20];
+	for ( i = 0; i < totalProcessLimit; ++i ) {
+		for ( j = 0; j < 20; ++j ) {
+			maxClaimTable[i][j] = 0;
+		}
+	}
 
 	// Table storing the amount of each resource currently allocated to each process.
 	// Updated by OSS whenever resources are granted or released. 
+	// Initialize to 0.
 	int allocatedTable[totalProcessLimit][20];
-
+	for ( i = 0; i < totalProcessLimit; ++i ) {
+		for ( j = 0; j < 20; ++j ) {
+			allocatedTable[i][j] = 0;
+		}
+	}
+	
 	// Table storing the amount of resources currently available to the system.
 	// Updated by OSS whenever resources are granted or released. 
 	// (Values are the difference of total resources and currently allocated resources.
-	int availableResourcesTable[totalProcessLimit][20];
+	// Initialize as equal to the totalResourceTable
+	int availableResourcesTable[20];
+	for ( i = 0; i < 20; ++i ) {
+		availableResourcesTable[i] = totalResourceTable[i];
+	}
 
 	// Table storing the requested resource if the process's request was blocked. 
 	// The resource number is stored at the index of the associated process. 
@@ -143,16 +158,84 @@ int main ( int argc, char *argv[] ) {
 		requestedResourceTable[i] = -1;
 	}
 	
+	/* Main Loop */
+	// Main loop variables
+	pid_t pid;
+	int processIndex = 0;	// Essentially the same as the process counter variable
+	j = 0;
+	unsigned int nextRandomProcessTime;
+	unsigned int nextProcessTimeBound = 5000;	// Used as a bound when generating the random time for the next process to be created 
+	int maxAmountOfEachResource = 3;	// Bound to control the max claim for each resource by USER
+	bool createProcess;	// Flag to control whether the logic to create a new process is needed or not
+	
+	// Main loop will run until the totalProcessLimit has been reached 
+	for ( i = 0; i < totalProcessLimit; ++i ) {
+		// Inner while loop to control the number or currently running processes
+		while ( ( j < maxRunningProcesses ) && ( createdProcesses < totalProcessLimit ) ) {
+			createProcess = false;	// Flag is false by default each run through the loop
+			
+			// Check first to see if it is time to create a new process
+			// If it is, set the flag to true. Calculate the time for the next process to be created.
+			if ( shmClock[0] > newProcessTime[0] || ( shmClock[0] == newProcessTime[0] && shmClock[1] >= newProcessTime[1] ) ) {
+				createProcess = true;
+				newProcessTime[0] = shmClock[0];
+				newProcessTime[1] = shmClock[1];
+				nextRandomProcessTime = ( rand() % ( nextProcessTimeBound - 1 + 1 ) + 1;
+				newProcessTime[1] += nextRandomProcessTime;
+				newProcessTime[0] += newProcessTime[1] / 1000000000;
+				newProcessTime[1] = newProcessTime[1] % 1000000000;
+			}
+							 
+			// If the flag gets set to true, continue to create the new process.
+			// Randomly create the new USER's max claim vector. Update maxClaimTable for current index.
+			// Perform fork and exec passing the process's index and resource vector to USER. 
+			if ( createProcess ) {
+				processIndex = createdProcesses;	// Sets process index for the various resource tables
+				for ( i = 0; i < 20; ++i ) {
+					maxClaimTable[processIndex][i] = ( rand() % ( maxAmountOfEachResource - 1 + 1 ) + 1 ); 
+				}
+				
+				pid = fork();
+				
+				// The fork failed...
+				if ( pid < 0 ) {
+					perror ( "OSS: Failure to fork child process." );
+					kill ( getpid(), SIGINT );
+				}
+				
+				// In the child process...
+				if ( pid == 0 ) {
+					//exec
+					exit ( 127 );
+				}
+				
+				// Still in parent process...
+				j++;
+				createdProcesses;
+			}
+			else {
+			// Check for message
+				
+			// Check blocked queue
+			}
+							 
+			wait ( 0 );
+			j--;
+		} // End inner while loop
+	} // End main loop
 
 	// Detach from and Delete shared memory segments / message queue
 	terminateIPC();
 
 	return 0;
-}
+} // End main
 
 /***************************************************************************************************************/
 /******************************************* End of Main Function **********************************************/
 /***************************************************************************************************************/
+
+
+
 
 // Function for signal handling.
 // Handles ctrl-c from keyboard or eclipsing 2 real life seconds in run-time.
