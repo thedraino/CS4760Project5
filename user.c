@@ -7,7 +7,10 @@
 #include "oss.h"
 
 int main ( int argc, char *argv[] ) {
-	int totalProcessLimit = 10; 
+	/* General variables */
+	int totalProcessLimit = 10;	// Needs to match the value from OSS
+	int myPid = getpid();		// Store process ID for self-identification
+	int ossPid = getppid();		// Store parent process ID for sending messages
 	
 	/* Signal handling */
 	if ( signal ( SIGINT, handle ) == SIG_ERR ) {
@@ -47,12 +50,12 @@ int main ( int argc, char *argv[] ) {
 	}
 	
 	/* Establish USER-specific seed for generating random numbers */
+	time_t processSeed; 
+	srand ( ( int ) time ( &processSeed ) % getpid() );
 	
 	/* Constants for determining probability of request, release, or terminate */
 	
 	/* Storing of passed arguments from OSS to get process index and max resource claim vector */
-	
-	/* Other variables */
 	
 	printf ( "Hello, from a %d process.\n", getpid() );
 
