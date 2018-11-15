@@ -50,7 +50,7 @@ int main ( int argc, char *argv[] ) {
 	unsigned int newProcessTime[2] = { 0, 0 };	// Initial value for time at which a new process shoudld be created
 	int createdProcesses = 0;	// Tracks the number of processes that have been created
 	int maxRunningProcesses = 18;	// Controls how many processes are allow to be alive at any given time
-	int totalProcessLimit = 100;	// Controls how many processes are allowed to be created over the life of the program
+	int totalProcessLimit = 10;	// Controls how many processes are allowed to be created over the life of the program
 	
 	/* Output file info */
 	int numberOfLines = 0;	// Tracks the number of lines being written to the file
@@ -117,7 +117,7 @@ int main ( int argc, char *argv[] ) {
 	// Number of each resource is a random number between 1-10 (inclusive).
 	int totalResourceTable[20]; 
 	for ( i = 0; i < 20; ++i ) {
-		totalResourceTable[i] = ( rand() % ( 10 - 1 + 1 ) + 1 );
+		totalResourceTable[i] = ( rand() % ( 10 - 1 + 1 ) + 1 ) );
 	}
 
 	// Table storing the max claims of each resource for each process.
@@ -207,10 +207,10 @@ int main ( int argc, char *argv[] ) {
 				if ( pid == 0 ) {
 					// 21 integer buffers to convert process index and resource vector to string.
 					// Once converted, all of the buffers will be passed to USER with execl.
-					char intBuffer0[3], intBuffer1[3], intBuffer2[3], intBuffer3[3]intBuffer4[3];
-					char intBuffer5[3], intBuffer6[3], intBuffer7[3], intBuffer8[3]intBuffer9[3];
-					char intBuffer10[3], intBuffer11[3], intBuffer12[3], intBuffer13[3]intBuffer14[3];
-					char intBuffer15[3], intBuffer16[3], intBuffer17[3], intBuffer18[3]intBuffer19[3];
+					char intBuffer0[3], intBuffer1[3], intBuffer2[3], intBuffer3[3], intBuffer4[3];
+					char intBuffer5[3], intBuffer6[3], intBuffer7[3], intBuffer8[3], intBuffer9[3];
+					char intBuffer10[3], intBuffer11[3], intBuffer12[3], intBuffer13[3], intBuffer14[3];
+					char intBuffer15[3], intBuffer16[3], intBuffer17[3], intBuffer18[3], intBuffer19[3];
 					char intBuffer20[3];
 					
 					// The buffer number corresponds with that resource in the maxClaimTable.
@@ -299,14 +299,19 @@ void incrementClock ( unsigned int shmClock[] ) {
 
 // Function to terminate all shared memory and message queue up completion or to work with signal handling
 void terminateIPC() {
+	// Close the file
 	fclose ( fp );
 	
+	// Detach from shared memory
 	shmdt ( shmClock );
 	shmdt ( shmBlocked );
 
-	msgctl ( messageID, IPC_RMID, NULL );
+	// Destroy shared memory
 	shmctl ( shmClockID, IPC_RMID, NULL );
 	shmctl ( shmBlockedID, IPC_RMID, NULL );
+	
+	// Destroy message queue
+	msgctl ( messageID, IPC_RMID, NULL );
 }
 
 // Function to create a queue of given capacity.
