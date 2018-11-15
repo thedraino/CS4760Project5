@@ -28,6 +28,7 @@ void calculateNeed ( int need[maxProcesses][maxResources], int maximum[maxProces
 void isSafeState ( int processes[], int available[], int maximum[][maxResources], int allot[][maxResources] );
 void incrementClock ( unsigned int shmClock[] );
 void printAllocatedResourcesTable();
+void printReport();
 void terminateIPC();
 
 // Variables to keep statistics over the course of the program run
@@ -35,6 +36,7 @@ int totalResourcesRequested;
 int totalRequestsGranted;
 int totalSafeStateChecks;
 int totalResourcesReleased;
+int totalProcessesCreated;
 int totalProcessesTerminated;
 
 FILE *fp;	// Used for opening and writing to filename described below
@@ -48,7 +50,7 @@ int main ( int argc, char *argv[] ) {
 	int i, j;	// Index variables to use in loops
 	srand ( time ( NULL ) );	// Seed for OSS to generate random numbers when necessary
 	unsigned int newProcessTime[2] = { 0, 0 };	// Initial value for time at which a new process shoudld be created
-	int createdProcesses = 0;	// Tracks the number of processes that have been created
+	totalProcessesCreated = 0;	// Tracks the number of processes that have been created
 	int maxRunningProcesses = 18;	// Controls how many processes are allow to be alive at any given time
 	int totalProcessLimit = 10;	// Controls how many processes are allowed to be created over the life of the program
 	
@@ -199,7 +201,7 @@ int main ( int argc, char *argv[] ) {
 		// Randomly create the new USER's max claim vector. Update maxClaimTable for current index.
 		// Perform fork and exec passing the process's index and resource vector to USER. 
 		if ( createProcess ) {
-			processIndex = createdProcesses;	// Sets process index for the various resource tables
+			processIndex = totalProcessesCreated;	// Sets process index for the various resource tables
 			for ( i = 0; i < 20; ++i ) {
 				maxClaimTable[processIndex][i] = ( rand() % ( maxAmountOfEachResource - 1 + 1 ) + 1 ); 
 			}
@@ -264,9 +266,13 @@ int main ( int argc, char *argv[] ) {
 			newProcessTime[0] += newProcessTime[1] / 1000000000;
 			newProcessTime[1] = newProcessTime[1] % 1000000000;
 			
+			// Reset flags that control child creation 
+			timeCheck = false;
+			processCheck = false;
+						 
 			// Manage process counters
 			currentProcesses++;
-			createdProcesses++;
+			totalProcessesCreated++;
 		}
 		
 		// Check for message...
@@ -282,6 +288,9 @@ int main ( int argc, char *argv[] ) {
 						 
 	} // End main loop
 
+	// Print program stats
+	//printReport();
+						 
 	// Detach from and delete shared memory segments / message queue
 	terminateIPC();
 
@@ -292,8 +301,17 @@ int main ( int argc, char *argv[] ) {
 /******************************************* End of Main Function **********************************************/
 /***************************************************************************************************************/
 
-
-
+// Prints program statistics before the program terminates
+void printReport() {
+	printf ( "Program Statistics\n" );
+	printf ( "\t1. Total processes created: %d\n", totalProcessesCreated );
+	printf ( "\t2. Total resource requests: %d\n", totalResourcesRequested );
+	printf ( "\t3. Total requests granted: %d\n", totalRequestsGranted );
+	printf ( "\t4. Percentage of requests granted: %f\n", ( totalRequestsGranted / totalResourcesRequested ) );
+	printf ( "\t5. Total deadlock avoidance algorithm uses: %d\n", totalSafeStateChecks );
+	printf ( "\t6. Total Resources released: %d", totalResourcesReleased );
+	printf ( "\n" );
+}
 
 // Function for signal handling.
 // Handles ctrl-c from keyboard or eclipsing 2 real life seconds in run-time.
@@ -303,6 +321,7 @@ void handle ( int sig_num ) {
 		terminateIPC();
 		kill ( 0, SIGKILL );
 		wait ( NULL );
+		printReport();
 		exit ( 0 );
 	}
 }
