@@ -94,7 +94,7 @@ int main ( int argc, char *argv[] ) {
 	shmClock[1] = 0; // Will hold the nanoseconds value for the simulated clock
 
 	if ( ( shmBlocked = (int *) shmat ( shmBlockedID, NULL, 0 ) ) < 0 ) {
-		perror ( "OSS: Failure to attach to shared memory space for simulated clock." );
+		perror ( "OSS: Failure to attach to shared memory space for blocked USER process array." );
 		return 1;
 	}
 	
