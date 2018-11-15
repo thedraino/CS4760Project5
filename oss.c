@@ -185,7 +185,7 @@ int main ( int argc, char *argv[] ) {
 		
 		// Check to see if there system is at its current process limit ( > maxRunningProcesses).
 		// If it is not, set the flag to true.
-		if ( currentProcesses < maxRunningProcesses ) {
+		if ( ( currentProcesses < maxRunningProcesses ) && ( totalProcessesCreated < totalProcessLimit ) ) {
 			processCheck = true;
 		} else {
 			processCheck = false;
