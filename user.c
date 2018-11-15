@@ -11,6 +11,10 @@ int main ( int argc, char *argv[] ) {
 	int totalProcessLimit = 10;	// Needs to match the value from OSS
 	int myPid = getpid();		// Store process ID for self-identification
 	int ossPid = getppid();		// Store parent process ID for sending messages
+	int processIndex;		// Store the index passed with exec from OSS. This will always be included
+					//   when sending messages to easily find the associated row in the various
+					//   resources tables in OSS.
+	int maxClaimVector[20];		// Array to store the max claim vector sent from OSS.
 	
 	/* Signal handling */
 	if ( signal ( SIGINT, handle ) == SIG_ERR ) {
