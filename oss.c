@@ -56,7 +56,7 @@ int main ( int argc, char *argv[] ) {
 	
 	/* Output file info */
 	int numberOfLines = 0;	// Tracks the number of lines being written to the file
-	char logName[10] = "prog5.log";	// Name of logfile that will be written to through the program
+	char logName[10] = "prog.log";	// Name of logfile that will be written to through the program
 	fp = fopen ( logName, "w+" );	// Opens file for writing
 	
 	/* Signal handling */ 
