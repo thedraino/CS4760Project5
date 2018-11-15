@@ -162,107 +162,127 @@ int main ( int argc, char *argv[] ) {
 	// Main loop variables
 	pid_t pid;
 	int processIndex = 0;	// Essentially the same as the process counter variable
-	j = 0;
+	int currentProcesses = 0;	// Counter to track how many processes are currently active
 	unsigned int nextRandomProcessTime;
 	unsigned int nextProcessTimeBound = 5000;	// Used as a bound when generating the random time for the next process to be created 
 	int maxAmountOfEachResource = 3;	// Bound to control the max claim for each resource by USER
+	bool timeCheck, processCheck;	// Both flags need to be set to true in order for createProcess to be set to true
 	bool createProcess;	// Flag to control whether the logic to create a new process is needed or not
 	
 	// Main loop will run until the totalProcessLimit has been reached 
-	for ( i = 0; i < totalProcessLimit; ++i ) {
-		// Inner while loop to control the number or currently running processes
-		while ( ( j < maxRunningProcesses ) && ( createdProcesses < totalProcessLimit ) ) {
-			createProcess = false;	// Flag is false by default each run through the loop
+	while ( 1 ) {
+		createProcess = false;	// Flag is false by default each run through the loop
+
+		// Check first to see if it is time to create a new process
+		// If it is, set the flag to true. 
+		if ( shmClock[0] > newProcessTime[0] || ( shmClock[0] == newProcessTime[0] && shmClock[1] >= newProcessTime[1] ) ) {
+			timeCheck = true;
+		} else {
+			timeCheck = false;
+		}
+		
+		// Check to see if there system is at its current process limit ( > maxRunningProcesses).
+		// If it is not, set the flag to true.
+		if ( currentProcesses < maxRunningProcesses ) {
+			processCheck = true;
+		} else {
+			processCheck = false;
+		}
+		
+		// Check to see if timeCheck and processCheck flags are set to true. 
+		// If they both are, set the flag to true as well.
+		if ( ( timeCheck == true ) && ( processCheck == true ) ) {
+			createProcess = true;
+		}
+
+		// If the flag gets set to true, continue to create the new process.
+		// Randomly create the new USER's max claim vector. Update maxClaimTable for current index.
+		// Perform fork and exec passing the process's index and resource vector to USER. 
+		if ( createProcess ) {
+			processIndex = createdProcesses;	// Sets process index for the various resource tables
+			for ( i = 0; i < 20; ++i ) {
+				maxClaimTable[processIndex][i] = ( rand() % ( maxAmountOfEachResource - 1 + 1 ) + 1 ); 
+			}
+
+			pid = fork();	// Fork the process
+
+			// The fork failed...
+			if ( pid < 0 ) {
+				perror ( "OSS: Failure to fork child process." );
+				kill ( getpid(), SIGINT );
+			}
+
+			// In the child process...
+			if ( pid == 0 ) {
+				// 21 integer buffers to convert process index and resource vector to string.
+				// Once converted, all of the buffers will be passed to USER with execl.
+				char intBuffer0[3], intBuffer1[3], intBuffer2[3], intBuffer3[3], intBuffer4[3];
+				char intBuffer5[3], intBuffer6[3], intBuffer7[3], intBuffer8[3], intBuffer9[3];
+				char intBuffer10[3], intBuffer11[3], intBuffer12[3], intBuffer13[3], intBuffer14[3];
+				char intBuffer15[3], intBuffer16[3], intBuffer17[3], intBuffer18[3], intBuffer19[3];
+				char intBuffer20[3];
+
+				// The buffer number corresponds with that resource in the maxClaimTable.
+				sprintf ( intBuffer0, "%d", maxClaimTable[processIndex][0] );	// resource0
+				sprintf ( intBuffer1, "%d", maxClaimTable[processIndex][1] );	// resource1
+				sprintf ( intBuffer2, "%d", maxClaimTable[processIndex][2] );	// resource2
+				sprintf ( intBuffer3, "%d", maxClaimTable[processIndex][3] );	// resource3
+				sprintf ( intBuffer4, "%d", maxClaimTable[processIndex][4] );	// resource4
+				sprintf ( intBuffer5, "%d", maxClaimTable[processIndex][5] );	// resource5
+				sprintf ( intBuffer6, "%d", maxClaimTable[processIndex][6] );	// resource6
+				sprintf ( intBuffer7, "%d", maxClaimTable[processIndex][7] );	// resource7
+				sprintf ( intBuffer8, "%d", maxClaimTable[processIndex][8] );	// resource8
+				sprintf ( intBuffer9, "%d", maxClaimTable[processIndex][9] );	// resource9
+				sprintf ( intBuffer10, "%d", maxClaimTable[processIndex][10] );	// resource10
+				sprintf ( intBuffer11, "%d", maxClaimTable[processIndex][11] );	// resource11
+				sprintf ( intBuffer12, "%d", maxClaimTable[processIndex][12] );	// resource12
+				sprintf ( intBuffer13, "%d", maxClaimTable[processIndex][13] );	// resource13
+				sprintf ( intBuffer14, "%d", maxClaimTable[processIndex][14] );	// resource14
+				sprintf ( intBuffer15, "%d", maxClaimTable[processIndex][15] );	// resource15
+				sprintf ( intBuffer16, "%d", maxClaimTable[processIndex][16] );	// resource16
+				sprintf ( intBuffer17, "%d", maxClaimTable[processIndex][17] );	// resource17
+				sprintf ( intBuffer18, "%d", maxClaimTable[processIndex][18] );	// resource18
+				sprintf ( intBuffer19, "%d", maxClaimTable[processIndex][19] );	// resource19
+				sprintf ( intBuffer20, "%d", processIndex );	// processIndex
+
+				// Exec to USER passing the appropriate information
+				execl ( "./user", "user", intBuffer0, intBuffer1, intBuffer2, intBuffer3,
+				       intBuffer4, intBuffer5, intBuffer6, intBuffer7, intBuffer8, 
+				       intBuffer9, intBuffer10, intBuffer11, intBuffer12, intBuffer13, 
+				       intBuffer14, intBuffer15, intBuffer16, intBuffer17, intBuffer18,
+				       intBuffer19, intBuffer20, NULL );
+
+				exit ( 127 );
+			} // End of child process logic for OSS
+
+			// In the parent process...
+			// Set the time for the next process to be created
+			newProcessTime[0] = shmClock[0];
+			newProcessTime[1] = shmClock[1];
+			nextRandomProcessTime = ( rand() % ( nextProcessTimeBound - 1 + 1 ) + 1;
+			newProcessTime[1] += nextRandomProcessTime;
+			newProcessTime[0] += newProcessTime[1] / 1000000000;
+			newProcessTime[1] = newProcessTime[1] % 1000000000;
 			
-			// Check first to see if it is time to create a new process
-			// If it is, set the flag to true. Calculate the time for the next process to be created.
-			if ( shmClock[0] > newProcessTime[0] || ( shmClock[0] == newProcessTime[0] && shmClock[1] >= newProcessTime[1] ) ) {
-				createProcess = true;
-				newProcessTime[0] = shmClock[0];
-				newProcessTime[1] = shmClock[1];
-				nextRandomProcessTime = ( rand() % ( nextProcessTimeBound - 1 + 1 ) + 1;
-				newProcessTime[1] += nextRandomProcessTime;
-				newProcessTime[0] += newProcessTime[1] / 1000000000;
-				newProcessTime[1] = newProcessTime[1] % 1000000000;
-			}
-							 
-			// If the flag gets set to true, continue to create the new process.
-			// Randomly create the new USER's max claim vector. Update maxClaimTable for current index.
-			// Perform fork and exec passing the process's index and resource vector to USER. 
-			if ( createProcess ) {
-				processIndex = createdProcesses;	// Sets process index for the various resource tables
-				for ( i = 0; i < 20; ++i ) {
-					maxClaimTable[processIndex][i] = ( rand() % ( maxAmountOfEachResource - 1 + 1 ) + 1 ); 
-				}
-				
-				pid = fork();
-				
-				// The fork failed...
-				if ( pid < 0 ) {
-					perror ( "OSS: Failure to fork child process." );
-					kill ( getpid(), SIGINT );
-				}
-				
-				// In the child process...
-				if ( pid == 0 ) {
-					// 21 integer buffers to convert process index and resource vector to string.
-					// Once converted, all of the buffers will be passed to USER with execl.
-					char intBuffer0[3], intBuffer1[3], intBuffer2[3], intBuffer3[3], intBuffer4[3];
-					char intBuffer5[3], intBuffer6[3], intBuffer7[3], intBuffer8[3], intBuffer9[3];
-					char intBuffer10[3], intBuffer11[3], intBuffer12[3], intBuffer13[3], intBuffer14[3];
-					char intBuffer15[3], intBuffer16[3], intBuffer17[3], intBuffer18[3], intBuffer19[3];
-					char intBuffer20[3];
-					
-					// The buffer number corresponds with that resource in the maxClaimTable.
-					sprintf ( intBuffer0, "%d", maxClaimTable[processIndex][0] );	// resource0
-					sprintf ( intBuffer1, "%d", maxClaimTable[processIndex][1] );	// resource1
-					sprintf ( intBuffer2, "%d", maxClaimTable[processIndex][2] );	// resource2
-					sprintf ( intBuffer3, "%d", maxClaimTable[processIndex][3] );	// resource3
-					sprintf ( intBuffer4, "%d", maxClaimTable[processIndex][4] );	// resource4
-					sprintf ( intBuffer5, "%d", maxClaimTable[processIndex][5] );	// resource5
-					sprintf ( intBuffer6, "%d", maxClaimTable[processIndex][6] );	// resource6
-					sprintf ( intBuffer7, "%d", maxClaimTable[processIndex][7] );	// resource7
-					sprintf ( intBuffer8, "%d", maxClaimTable[processIndex][8] );	// resource8
-					sprintf ( intBuffer9, "%d", maxClaimTable[processIndex][9] );	// resource9
-					sprintf ( intBuffer10, "%d", maxClaimTable[processIndex][10] );	// resource10
-					sprintf ( intBuffer11, "%d", maxClaimTable[processIndex][11] );	// resource11
-					sprintf ( intBuffer12, "%d", maxClaimTable[processIndex][12] );	// resource12
-					sprintf ( intBuffer13, "%d", maxClaimTable[processIndex][13] );	// resource13
-					sprintf ( intBuffer14, "%d", maxClaimTable[processIndex][14] );	// resource14
-					sprintf ( intBuffer15, "%d", maxClaimTable[processIndex][15] );	// resource15
-					sprintf ( intBuffer16, "%d", maxClaimTable[processIndex][16] );	// resource16
-					sprintf ( intBuffer17, "%d", maxClaimTable[processIndex][17] );	// resource17
-					sprintf ( intBuffer18, "%d", maxClaimTable[processIndex][18] );	// resource18
-					sprintf ( intBuffer19, "%d", maxClaimTable[processIndex][19] );	// resource19
-					sprintf ( intBuffer20, "%d", processIndex );	// processInded
-					
-					// Exec to USER passing the appropriate information
-					execl ( "./user", "user", intBuffer0, intBuffer1, intBuffer2, intBuffer3,
-					       intBuffer4, intBuffer5, intBuffer6, intBuffer7, intBuffer8, 
-					       intBuffer9, intBuffer10, intBuffer11, intBuffer12, intBuffer13, 
-					       intBuffer14, intBuffer15, intBuffer16, intBuffer17, intBuffer18,
-					       intBuffer19, intBuffer20, NULL );
-					
-					exit ( 127 );
-				} // End of child process logic for OSS
-				
-				// In the parent process...
-				j++;
-				createdProcesses++;
-			}
-			else {
-			// Check for message
-				
-			// Check blocked queue
-			}
-							 
-			wait ( 0 );
-			j--;
-		} // End inner while loop
+			// Manage process counters
+			currentProcesses++;
+			createdProcesses++;
+		}
+		
+		// Check for message...
+		// Resource Request Message
+						 
+		// Resource Release Message
+						 
+		// Process Termination Message
+		
+		// Check blocked queue
+		
 		incrementClock ( shmClock );
+						 
 	} // End main loop
 
-	// Detach from and Delete shared memory segments / message queue
+	// Detach from and delete shared memory segments / message queue
 	terminateIPC();
 
 	return 0;
