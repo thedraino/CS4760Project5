@@ -14,7 +14,8 @@ int main ( int argc, char *argv[] ) {
 	int processIndex;		// Store the index passed with exec from OSS. This will always be included
 					//   when sending messages to easily find the associated row in the various
 					//   resources tables in OSS.
-	int maxClaimVector[20];		// Array to store the max claim vector sent from OSS.
+	int maxClaimVector[20];		// Store the max claim vector sent from OSS.
+	int allocatedVector[20];	// Store the amount of each resource ( 0-19 ) currently allocated to this USER
 	
 	/* Signal handling */
 	if ( signal ( SIGINT, handle ) == SIG_ERR ) {
