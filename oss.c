@@ -97,6 +97,7 @@ int main ( int argc, char *argv[] ) {
 		perror ( "OSS: Failure to attach to shared memory space for simulated clock." );
 		return 1;
 	}
+	
 	// This table has index to correspond with each USER process. 
 	// If the process is ever blocked by OSS, that flag at its corresponding index
 	//  will get flipped to 1 to indicate that it is blocked. 
@@ -112,7 +113,6 @@ int main ( int argc, char *argv[] ) {
 		perror ( "OSS: Failure to create the message queue." );
 		return 1;
 	}
-
 
 	/* Creation of different data tables */
 	// Table storing the total resources in the system.
