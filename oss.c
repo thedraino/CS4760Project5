@@ -214,27 +214,27 @@ int main ( int argc, char *argv[] ) {
 					char intBuffer20[3];
 					
 					// The buffer number corresponds with that resource in the maxClaimTable.
-					sprintf ( intBuffer0, "%d", maxClaimTable[processIndex][0] );
-					sprintf ( intBuffer1, "%d", maxClaimTable[processIndex][1] );
-					sprintf ( intBuffer2, "%d", maxClaimTable[processIndex][2] );
-					sprintf ( intBuffer3, "%d", maxClaimTable[processIndex][3] );
-					sprintf ( intBuffer4, "%d", maxClaimTable[processIndex][4] );
-					sprintf ( intBuffer5, "%d", maxClaimTable[processIndex][5] );
-					sprintf ( intBuffer6, "%d", maxClaimTable[processIndex][6] );
-					sprintf ( intBuffer7, "%d", maxClaimTable[processIndex][7] );
-					sprintf ( intBuffer8, "%d", maxClaimTable[processIndex][8] );
-					sprintf ( intBuffer9, "%d", maxClaimTable[processIndex][9] );
-					sprintf ( intBuffer10, "%d", maxClaimTable[processIndex][10] );
-					sprintf ( intBuffer11, "%d", maxClaimTable[processIndex][11] );
-					sprintf ( intBuffer12, "%d", maxClaimTable[processIndex][12] );
-					sprintf ( intBuffer13, "%d", maxClaimTable[processIndex][13] );
-					sprintf ( intBuffer14, "%d", maxClaimTable[processIndex][14] );
-					sprintf ( intBuffer15, "%d", maxClaimTable[processIndex][15] );
-					sprintf ( intBuffer16, "%d", maxClaimTable[processIndex][16] );
-					sprintf ( intBuffer17, "%d", maxClaimTable[processIndex][17] );
-					sprintf ( intBuffer18, "%d", maxClaimTable[processIndex][18] );
-					sprintf ( intBuffer19, "%d", maxClaimTable[processIndex][19] );
-					sprintf ( intBuffer20, "%d", processIndex );
+					sprintf ( intBuffer0, "%d", maxClaimTable[processIndex][0] );	// resource0
+					sprintf ( intBuffer1, "%d", maxClaimTable[processIndex][1] );	// resource1
+					sprintf ( intBuffer2, "%d", maxClaimTable[processIndex][2] );	// resource2
+					sprintf ( intBuffer3, "%d", maxClaimTable[processIndex][3] );	// resource3
+					sprintf ( intBuffer4, "%d", maxClaimTable[processIndex][4] );	// resource4
+					sprintf ( intBuffer5, "%d", maxClaimTable[processIndex][5] );	// resource5
+					sprintf ( intBuffer6, "%d", maxClaimTable[processIndex][6] );	// resource6
+					sprintf ( intBuffer7, "%d", maxClaimTable[processIndex][7] );	// resource7
+					sprintf ( intBuffer8, "%d", maxClaimTable[processIndex][8] );	// resource8
+					sprintf ( intBuffer9, "%d", maxClaimTable[processIndex][9] );	// resource9
+					sprintf ( intBuffer10, "%d", maxClaimTable[processIndex][10] );	// resource10
+					sprintf ( intBuffer11, "%d", maxClaimTable[processIndex][11] );	// resource11
+					sprintf ( intBuffer12, "%d", maxClaimTable[processIndex][12] );	// resource12
+					sprintf ( intBuffer13, "%d", maxClaimTable[processIndex][13] );	// resource13
+					sprintf ( intBuffer14, "%d", maxClaimTable[processIndex][14] );	// resource14
+					sprintf ( intBuffer15, "%d", maxClaimTable[processIndex][15] );	// resource15
+					sprintf ( intBuffer16, "%d", maxClaimTable[processIndex][16] );	// resource16
+					sprintf ( intBuffer17, "%d", maxClaimTable[processIndex][17] );	// resource17
+					sprintf ( intBuffer18, "%d", maxClaimTable[processIndex][18] );	// resource18
+					sprintf ( intBuffer19, "%d", maxClaimTable[processIndex][19] );	// resource19
+					sprintf ( intBuffer20, "%d", processIndex );	// processInded
 					
 					// Exec to USER passing the appropriate information
 					execl ( "./user", "user", intBuffer0, intBuffer1, intBuffer2, intBuffer3,
