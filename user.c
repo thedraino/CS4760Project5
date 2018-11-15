@@ -54,8 +54,8 @@ int main ( int argc, char *argv[] ) {
 	srand ( ( int ) time ( &processSeed ) % getpid() );
 	
 	/* Constants for determining probability of request, release, or terminate */
-	cont int probUpper = 100;
-	cont int probLower = 1;
+	const int probUpper = 100;
+	const int probLower = 1;
 	const int requestProb = 50;
 	const int releaseProb = 40;
 	const int terminateProb = 10;
