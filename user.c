@@ -17,6 +17,9 @@ int main ( int argc, char *argv[] ) {
 					//   resources tables in OSS.
 	int maxClaimVector[20];		// Store the max claim vector sent from OSS.
 	int allocatedVector[20];	// Store the amount of each resource ( 0-19 ) currently allocated to this USER
+	bool iAmBlocked = false;	// Way for process to store locally if it is blocked based off of its value in
+					//   shared memory space. 
+					
 	
 	/* Signal handling */
 	if ( signal ( SIGINT, handle ) == SIG_ERR ) {
@@ -89,14 +92,12 @@ int main ( int argc, char *argv[] ) {
 	maxClaimVector[19] = atoi ( argv[20] );
 	processIndex = atoi ( argv[21] );
 	
-	printf ( "Hello, from a %d process.\n", myPid );
-	printf ( "&d: Process %d\n", myPid, processIndex );
-
-	
-	for ( i = 0; i < 20; ++i ) {
-		printf ( "R%d: %d ", i, maxClaimVector[i] );
-	}
-	printf ( "\n" );
+	//printf ( "Hello, from a %d process.\n", myPid );
+	//printf ( "%d: Process %d\n", myPid, processIndex );
+	//for ( i = 0; i < 20; ++i ) {
+	//	printf ( "R%d: %d ", i, maxClaimVector[i] );
+	//}
+	//printf ( "\n" );
 	
 	return 0;
 }
