@@ -1,0 +1,5 @@
+Currently sets up the system and passed max claim vector and index to child process. Still need to...
+1. Code actual messaging logic. 
+2. Request, Release, Terminate interactions
+3. Banker's algorithm
+4. Check queue
