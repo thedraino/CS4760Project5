@@ -99,6 +99,11 @@ int main ( int argc, char *argv[] ) {
 	//}
 	//printf ( "\n" );
 	
+	/* Initialize allocated vector to 0 */
+	for ( i = 0; i < 20; ++i ) {
+		allocatedVector[i] = 0;
+	}
+	
 	return 0;
 }
 
