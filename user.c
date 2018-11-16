@@ -8,6 +8,7 @@
 
 int main ( int argc, char *argv[] ) {
 	/* General variables */
+	int i, j; 			// Loop index variables
 	int totalProcessLimit = 10;	// Needs to match the value from OSS
 	int myPid = getpid();		// Store process ID for self-identification
 	int ossPid = getppid();		// Store parent process ID for sending messages
@@ -66,9 +67,36 @@ int main ( int argc, char *argv[] ) {
 	const int terminateProb = 10;
 	
 	/* Storing of passed arguments from OSS to get process index and max resource claim vector */
+	maxClaimVector[0] = atoi ( argv[1] );
+	maxClaimVector[1] = atoi ( argv[2] );
+	maxClaimVector[2] = atoi ( argv[3] );
+	maxClaimVector[3] = atoi ( argv[4] );
+	maxClaimVector[4] = atoi ( argv[5] );
+	maxClaimVector[5] = atoi ( argv[6] );
+	maxClaimVector[6] = atoi ( argv[7] );
+	maxClaimVector[7] = atoi ( argv[8] );
+	maxClaimVector[8] = atoi ( argv[9] );
+	maxClaimVector[9] = atoi ( argv[10] );
+	maxClaimVector[10] = atoi ( argv[11] );
+	maxClaimVector[11] = atoi ( argv[12] );
+	maxClaimVector[12] = atoi ( argv[13] );
+	maxClaimVector[13] = atoi ( argv[14] );
+	maxClaimVector[14] = atoi ( argv[15] );
+	maxClaimVector[15] = atoi ( argv[16] );
+	maxClaimVector[16] = atoi ( argv[17] );
+	maxClaimVector[17] = atoi ( argv[18] );
+	maxClaimVector[18] = atoi ( argv[19] );
+	maxClaimVector[19] = atoi ( argv[20] );
+	processIndex = atoi ( argv[21] );
 	
-	printf ( "Hello, from a %d process.\n", getpid() );
+	printf ( "Hello, from a %d process.\n", myPid );
+	printf ( "&d: Process %d\n", myPid, processIndex );
 
+	
+	for ( i = 0; i < 20; ++i ) {
+		printf ( "R%d: %d ", i, maxClaimVector[i] );
+	}
+	printf ( "\n" );
 	
 	return 0;
 }
