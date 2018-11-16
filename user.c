@@ -75,7 +75,7 @@ int main ( int argc, char *argv[] ) {
 
 void handle ( int sig_num ) {
 	if ( sig_num == SIGINT ) {
-		printf ( stderr, "%d: Signal to terminate process was received.\n", getpid() );
+		printf ( "%d: Signal to terminate process was received.\n", getpid() );
 		exit ( 0 );
 	}
 }
