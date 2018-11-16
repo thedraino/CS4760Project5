@@ -119,7 +119,7 @@ int main ( int argc, char *argv[] ) {
 	// Number of each resource is a random number between 1-10 (inclusive).
 	int totalResourceTable[20]; 
 	for ( i = 0; i < 20; ++i ) {
-		totalResourceTable[i] = ( rand() % ( 10 - 1 + 1 ) + 1 ) );
+		totalResourceTable[i] = ( rand() % ( 10 - 1 + 1 ) + 1 );
 	}
 
 	// Table storing the max claims of each resource for each process.
@@ -261,7 +261,7 @@ int main ( int argc, char *argv[] ) {
 			// Set the time for the next process to be created
 			newProcessTime[0] = shmClock[0];
 			newProcessTime[1] = shmClock[1];
-			nextRandomProcessTime = ( rand() % ( nextProcessTimeBound - 1 + 1 ) + 1;
+			nextRandomProcessTime = ( rand() % ( nextProcessTimeBound - 1 + 1 ) + 1 );
 			newProcessTime[1] += nextRandomProcessTime;
 			newProcessTime[0] += newProcessTime[1] / 1000000000;
 			newProcessTime[1] = newProcessTime[1] % 1000000000;
