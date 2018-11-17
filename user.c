@@ -138,8 +138,8 @@ int main ( int argc, char *argv[] ) {
 					perror ( "USER: Failure to send message." );
 				}	
 				
-				printf ( "Process %d -- PID: %d -- Terminated at %d:%d\n", processIndex, myPid, 
-					message.messageTime[0], message.messageTime[1] );
+				//printf ( "Process %d -- PID: %d -- Terminated at %d:%d\n", processIndex, myPid, 
+				//	message.messageTime[0], message.messageTime[1] );
 				
 				exit ( EXIT_SUCCESS );
 			}
@@ -230,8 +230,8 @@ int main ( int argc, char *argv[] ) {
 					perror ( "USER: Failure to send message." );
 				}	
 				
-				printf ( "Process %d -- PID: %d -- Terminated at %d:%d\n", processIndex, myPid, 
-					message.messageTime[0], message.messageTime[1] );
+				//printf ( "Process %d -- PID: %d -- Terminated at %d:%d\n", processIndex, myPid, 
+				//	message.messageTime[0], message.messageTime[1] );
 				
 				exit ( EXIT_SUCCESS );
 			} // End of terminate resource
