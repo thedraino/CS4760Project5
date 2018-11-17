@@ -1,5 +1,55 @@
-Currently sets up the system and passed max claim vector and index to child process. Still need to...
-1. Code actual messaging logic. 
-2. Request, Release, Terminate interactions
-3. Banker's algorithm
-4. Check queue
+
+README
+
+Name: Andrew Audrain
+Course: CS 4760 - Operating Systems
+Professor: Dr. Hauschild
+
+Project 5: Resource Management
+
+The purpose of this project was to design and implement a resource management
+module for my operating system simulator OSS. This project was supposed to use
+deadlock avoidance to manage resources, with processes being blocked on their 
+requests until requests are safe. 
+
+Inluded files: 
+  - README
+  - oss.h
+  - oss.c
+  - user.c
+  - versionControlLog.txt
+
+Unfortunately, I could not get my version of banker's algorithm to work for the 
+deadlock avoidance. As the logfile will show after running the program, it simply 
+rejects all resource requests. The system definitely is churning. There are many 
+request, release, and termination notification going back and forth between OSS and 
+USER, but every request seems to get blocked and I cannot figure out why that is the
+case. Also, the initially created process, Processs 0, always requests Resource 0 on 
+the first run and then ends up releasing resources that it doesn't have. It is the only 
+process that does this, so I'm sure the system is getting hung up on somethign during
+the initialization of the banker's algorithm. I'm sure it's obvious and I've just been
+looking at it too long, but it is what it is. 
+
+In spite of the fact that the deadlock avoidance doesn't work like I think it should, 
+I did cover the rest of the bases very well. 
+  - OSS forks off child processes at random times
+  - OSS create a new, random max claim vector each time a new process if forked
+  - That claim vector is successfully passed to the child process
+  - There are tables for keeping track of the system state including total resources, 
+    max claim vectors for each process, available resources, and allocated resources
+  - Every activity writes to the outfile, prog.log, to view after the program has terminated
+  - Shared memory is set up and accessible by OSS and USER
+  - Message queue is set up and accessible by OSS and USER
+  - Signal handling catches ctrl-c, various errors, and the timer. If a signal is caught, 
+    the program resources are cleaned up efficiently. 
+  - Code is formatted consistently and commented well to explain what was going on. 
+  
+I wish I could figure out what was going on with the deadlock algorithm, because the project
+worked at each phase up until the full implementation. 
+
+The logfile will show:
+  - Process creation
+  - Max claim vector for each process upon creation
+  - Request, Release, and Termination notification as they are received and handled by OSS
+  - A table showing currently allocated resources (or lack thereof)
+  
