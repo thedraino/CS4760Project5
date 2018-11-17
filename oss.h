@@ -1,3 +1,4 @@
+
 // File: oss.h
 // Created by: Andrew Audrain
 //
@@ -23,7 +24,7 @@
 #include <stdbool.h>
 
 /* Macros */
-#define maxProcesses 18
+#define maxProcesses 100
 #define maxResources 20
 
 /* Structure(s) */
