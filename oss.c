@@ -25,9 +25,10 @@ int rear ( Queue* queue );
 
 // Other Prototype Functions
 void calculateNeed ( int need[maxProcesses][maxResources], int maximum[maxProcesses][maxResources], int allot[maxProcesses][maxResources] );
-void isSafeState ( int processes[], int available[], int maximum[][maxResources], int allot[][maxResources] );
+bool isSafeState ( int available[], int maximum[][maxResources], int allot[][maxResources] );
 void incrementClock ( unsigned int shmClock[] );
-void printAllocatedResourcesTable();
+void printAllocatedResourcesTable( int num1, int array[][maxResources] );
+void printMaxClaimTable( int num1, int array[][maxResources] );
 void printReport();
 void terminateIPC();
 
@@ -39,6 +40,9 @@ int totalResourcesReleased;
 int totalProcessesCreated;
 int totalProcessesTerminated;
 
+const int maxRunningProcesses = 18;	// Controls how many processes are allow to be alive at any given time
+const int totalProcessLimit = 100;	// Controls how many processes are allowed to be created over the life of the program
+const int maxAmountOfEachResource = 4;	// Bound to control the max claim for each resource by USER
 FILE *fp;	// Used for opening and writing to filename described below
 
 /*************************************************************************************************************/
@@ -51,8 +55,7 @@ int main ( int argc, char *argv[] ) {
 	srand ( time ( NULL ) );	// Seed for OSS to generate random numbers when necessary
 	unsigned int newProcessTime[2] = { 0, 0 };	// Initial value for time at which a new process shoudld be created
 	totalProcessesCreated = 0;	// Tracks the number of processes that have been created
-	int maxRunningProcesses = 18;	// Controls how many processes are allow to be alive at any given time
-	int totalProcessLimit = 10;	// Controls how many processes are allowed to be created over the life of the program
+	int myPid = getpid();
 	
 	/* Output file info */
 	int numberOfLines = 0;	// Tracks the number of lines being written to the file
@@ -60,7 +63,7 @@ int main ( int argc, char *argv[] ) {
 	fp = fopen ( logName, "w+" );	// Opens file for writing
 	
 	/* Signal handling */ 
-	int killTimer = 2;	// Value to control how many real-life seconds program can run for
+	const int killTimer = 2;	// Value to control how many real-life seconds program can run for
 	alarm ( killTimer );	// Sets the timer alarm based on value of killTimer
 
 	if ( signal ( SIGINT, handle ) == SIG_ERR ) {
@@ -167,12 +170,32 @@ int main ( int argc, char *argv[] ) {
 	int currentProcesses = 0;	// Counter to track how many processes are currently active
 	unsigned int nextRandomProcessTime;
 	unsigned int nextProcessTimeBound = 5000;	// Used as a bound when generating the random time for the next process to be created 
-	int maxAmountOfEachResource = 3;	// Bound to control the max claim for each resource by USER
 	bool timeCheck, processCheck;	// Both flags need to be set to true in order for createProcess to be set to true
 	bool createProcess;	// Flag to control whether the logic to create a new process is needed or not
 	
+	Queue* blockedQueue = createQueue ( totalProcessLimit );
+	
+	// Variables used when handling received messages
+	int tempPid;
+	int tempIndex;
+	int tempRequest;
+	int tempRelease;
+	bool tempTerminate;
+	bool tempGranted;
+	unsigned int tempClock[2];
+	unsigned int receivedTime[2];
+	int tempHolder; 
+	
 	// Main loop will run until the totalProcessLimit has been reached 
 	while ( 1 ) {
+		
+		// Check the number of lines in the logfile after the most recent run through the loop.
+		// Terminate if logfile exceeds 10000 lines (per project instruction ).
+		if ( numberOfLines >= 10000 ) {
+			fprintf ( fp, "OSS: Logfile has exceeded it's maximum length. Program terminating...\n" );
+			kill ( getpid(), SIGINT );
+		}
+		
 		createProcess = false;	// Flag is false by default each run through the loop
 
 		// Check first to see if it is time to create a new process
@@ -205,7 +228,13 @@ int main ( int argc, char *argv[] ) {
 			for ( i = 0; i < 20; ++i ) {
 				maxClaimTable[processIndex][i] = ( rand() % ( maxAmountOfEachResource - 1 + 1 ) + 1 ); 
 			}
-
+			
+			fprintf ( fp, "Max Claim Vector for new newly generated process: Process %d\n", processIndex);
+			for ( i = 0; i < 20; ++i ) {
+				fprintf ( fp, "%d: %d\t", i, maxClaimTable[processIndex][i] );
+			}
+			fprintf ( fp, "\n" );
+			
 			pid = fork();	// Fork the process
 
 			// The fork failed...
@@ -247,6 +276,10 @@ int main ( int argc, char *argv[] ) {
 				sprintf ( intBuffer19, "%d", maxClaimTable[processIndex][19] );	// resource19
 				sprintf ( intBuffer20, "%d", processIndex );	// processIndex
 
+				fprintf ( fp, "OSS: Process %d (PID: %d) was created at %d:%d.\n", processIndex, 
+					 getpid(), shmClock[0], shmClock[1] );
+				numberOfLines++;
+				
 				// Exec to USER passing the appropriate information
 				execl ( "./user", "user", intBuffer0, intBuffer1, intBuffer2, intBuffer3,
 				       intBuffer4, intBuffer5, intBuffer6, intBuffer7, intBuffer8, 
@@ -276,20 +309,184 @@ int main ( int argc, char *argv[] ) {
 		}
 		
 		// Check for message...
+		msgrcv ( messageID, &message, sizeof( message ), 5, IPC_NOWAIT );
+		
+		// Set variables based on received message...
+		tempPid = message.pid;
+		tempIndex = message.tableIndex;
+		tempRequest = message.request;
+		tempRelease = message.release;
+		tempTerminate = message.terminate;
+		tempGranted = message.resourceGranted;
+		tempClock[0] = message.messageTime[0];
+		tempClock[1] = message.messageTime[1];
+		
 		// Resource Request Message
-						 
+		if ( tempRequest != -1 ) {
+			fprintf ( fp, "OSS: Process %d requested Resource %d at %d:%d.\n", tempIndex, 
+				 tempRequest, tempClock[0], tempClock[1] );
+			numberOfLines++;
+			totalResourcesRequested++;
+			
+			// Store that requested resource value in the request vector for that process.
+			requestedResourceTable[tempIndex] = tempRequest;
+			
+			// Temporarily change the resource tables to test the state
+			allocatedTable[tempIndex][tempRequest]++;
+			availableResourcesTable[tempRequest]--;
+			
+			// Run banker's algorithm...
+			// If the state is safe, send the USER a message granting the resource request.
+			// Update the tables.
+			if (isSafeState ( availableResourcesTable, maxClaimTable, allocatedTable ) ) {
+				totalRequestsGranted++;
+				message.msg_type = tempIndex;
+				message.pid = getpid();
+				message.tableIndex = tempIndex;
+				message.request = -1;
+				message.release = -1;
+				message.terminate = false;
+				message.resourceGranted = true;
+				message.messageTime[0] = shmClock[0];
+				message.messageTime[1] = shmClock[1];
+				
+				if ( msgsnd ( messageID, &message, sizeof ( message ), 0 ) == -1 ) {
+					perror ( "OSS: Failure to send message." );
+				}
+				
+				fprintf ( fp, "OSS: Process %d was granted its request of Resource %d at %d:%d.\n", 
+					 tempIndex, tempRequest, shmClock[0], shmClock[1] );
+				numberOfLines++;				
+			}
+			// if it's unsafe, block the user in shm and add to queue
+			// update logfile
+			else {
+				// Reset tables to their state before the test
+				allocatedTable[tempIndex][tempRequest]--;
+				availableResourcesTable[tempRequest]++;
+				
+				// Place that process's index in the blocked queue
+				enqueue ( blockedQueue, tempIndex );
+				
+				// Set the blocked process flag in shared memory for USER to see
+				shmBlocked[tempIndex] = 1;
+				
+				fprintf ( fp, "OSS: Process %d was denied its request of Resource %d and was blocked at %d:%d.\n", 
+					 tempIndex, tempRequest, shmClock[0], shmClock[1] );
+				numberOfLines++;
+			}
+			
+			incrementClock ( shmClock );
+		}
+		
 		// Resource Release Message
-						 
+		if ( tempRelease != -1 ) {
+			fprintf ( fp, "OSS: Process %d indicated that it was releasing some of Resource %d at %d:%d.\n", 
+				 tempIndex, tempRelease, tempClock[0], tempClock[1] );
+			numberOfLines++;
+			
+			totalResourcesReleased++;
+			allocatedTable[tempIndex][tempRelease]--;
+			availableResourcesTable[tempRelease]++;
+	
+			fprintf ( fp, "OSS: Process %d release notification was handled at %d:%d.\n", tempIndex, shmClock[0],
+				 shmClock[1] );
+			numberOfLines++;
+			incrementClock ( shmClock );
+		}
+		
 		// Process Termination Message
+		if ( tempTerminate == true ) {
+			fprintf ( fp, "OSS: Process %d terminated at %d:%d.\n", tempIndex, tempClock[0], tempClock[1] );
+			numberOfLines++;
+			
+			for ( i = 0; i < 20; ++i ) {
+				tempHolder = allocatedTable[tempIndex][i];
+				allocatedTable[tempIndex][i] = 0;
+				availableResourcesTable[i] += tempHolder;
+			}
+			currentProcesses--;
+			
+			fprintf ( fp, "OSS: Process %ds termination notification was handled at %d:%d.\n", tempIndex, 
+				 shmClock[0], shmClock[1] );
+			numberOfLines++;
+			incrementClock ( shmClock );
+		}
 		
 		// Check blocked queue
+		if ( !isEmpty ) {
+			// Dequeue the next item from the queue, store its index and find the
+			//   requested resource which had it caused it to get blocked.
+			tempIndex = dequeue ( blockedQueue );
+			tempRequest = requestedResourceTable[tempIndex]; 
+			totalResourcesRequested++;
+			
+			// Temporarily change the resource tables to test the state
+			allocatedTable[tempIndex][tempRequest]++;
+			availableResourcesTable[tempRequest]--;
+			
+			// Run banker's algorithm...
+			// If the state is safe, send the USER a message granting the resource request.
+			// Update the tables.
+			if (isSafeState ( availableResourcesTable, maxClaimTable, allocatedTable ) ) {
+				totalRequestsGranted++;
+				message.msg_type = tempIndex;
+				message.pid = getpid();
+				message.tableIndex = tempIndex;
+				message.request = -1;
+				message.release = -1;
+				message.terminate = false;
+				message.resourceGranted = true;
+				message.messageTime[0] = shmClock[0];
+				message.messageTime[1] = shmClock[1];
+				
+				if ( msgsnd ( messageID, &message, sizeof ( message ), 0 ) == -1 ) {
+					perror ( "OSS: Failure to send message." );
+				}
+				
+				// Set the blocked process flag in shared memory for USER to see
+				shmBlocked[tempIndex] = 0;
+				
+				fprintf ( fp, "OSS: Process %d was granted its request of Resource %d at %d:%d.\n", 
+					 tempIndex, tempRequest, shmClock[0], shmClock[1] );
+				numberOfLines++;				
+			} else {
+				// Reset tables to their state before the test
+				allocatedTable[tempIndex][tempRequest]--;
+				availableResourcesTable[tempRequest]++;
+				
+				// Place that process's index in the blocked queue
+				enqueue ( blockedQueue, tempIndex );
+				
+				// Set the blocked process flag in shared memory for USER to see
+				shmBlocked[tempIndex] = 1;
+				
+				fprintf ( fp, "OSS: Process %d was denied it's request of Resource %d and was blocked at %d:%d.\n", 
+					 tempIndex, tempRequest, shmClock[0], shmClock[1] );
+				numberOfLines++;
+			}
+			incrementClock ( shmClock );
+		}
 		
 		incrementClock ( shmClock );
-						 
+		
+		if ( numberOfLines % 20 == 0 ) {
+			//printAllocatedResourcesTable( totalProcessesCreated, allocatedTable );
+			fprintf ( fp, "Currently Allocated Resources\n" );
+			fprintf ( fp, "\tR0\tR1\tR2\tR3\tR4\tR5\tR6\tR7\tR8\tR9\tR10\tR11\tR12\tR13\tR14\tR15\tR16\tR17\tR18\tR19\n" );
+			for ( i = 0; i < totalProcessesCreated; ++i ) {
+				fprintf ( fp, "P%d:\t", i );
+				for ( j = 0; j < 20; ++j ) {
+					fprintf ( fp, "%d\t", allocatedTable[i][j] );
+				}
+				fprintf ( fp, "\n" );
+			}
+		}			
+			
 	} // End main loop
 
 	// Print program stats
-	//printReport();
+	printReport();
 						 
 	// Detach from and delete shared memory segments / message queue
 	terminateIPC();
@@ -301,13 +498,76 @@ int main ( int argc, char *argv[] ) {
 /******************************************* End of Main Function **********************************************/
 /***************************************************************************************************************/
 
+// Generates the values for the ResourcesNeeded matrix used in banker's algorithm (isSafeState()).
+// Function to find the need of each process in the system.
+void calculateNeed ( int need[maxProcesses][maxResources], int maximum[maxProcesses][maxResources], int allot[maxProcesses][maxResources] ) {
+	int i, j; 
+	for ( i = 0; i < maxProcesses; ++i ) {
+		for ( j = 0; j < maxResources; ++j ) {
+			need[i][j] = maximum[i][j] - allot[i][j];
+		}
+	}
+}
+
+// Code adapted from a c++ version of the algorithm at https://www.geeksforgeeks.org/program-bankers-algorithm-set-1-safety-algorithm/
+// Adaptation of banker's algorithm to handle deadlock avoidance for oss. 
+bool isSafeState ( int available[], int maximum[][maxResources], int allot[][maxResources] ) {
+	totalSafeStateChecks++;
+	int index; 
+	
+	int need[maxProcesses][maxResources];
+	calculateNeed ( need, maximum, allot );	// Function to calculate need matrix
+	
+	bool finish[maxProcesses] = { 0 };
+	
+	// Make a copy of the available resources vector.
+	int work[maxResources];
+	int i; 
+	for ( i = 0; i < maxResources; ++i ) {
+		work[i] = available[i]; 
+	}
+	
+	int count = 0; 
+	// Loop runs while all processes are not finished or system is not in a safe state
+	while ( count < maxProcesses ) {
+		int p; 
+		bool found = false;
+		for ( p = 0; p < maxProcesses; ++p ) {
+			if ( finish[p] == 0 ) {
+				int j;
+				for ( j = 0; j < maxResources; ++j ) {
+					if ( need[p][j] > work[j] )
+					    break;
+				}
+				if ( j == maxResources ) {
+					int k;
+					for ( k = 0; k < maxResources; ++k ) {
+						work[k] += allot[p][k];
+					}
+					finish[p] = 1;
+					found = true;
+				}
+			}
+		}
+		
+		if ( found == false ) {
+			//return true;
+			return false;
+		}    
+	}
+	
+	return true; 
+	
+}
+
 // Prints program statistics before the program terminates
 void printReport() {
+	double approvalPercentage = totalRequestsGranted / totalResourcesRequested;
 	printf ( "Program Statistics\n" );
 	printf ( "\t1. Total processes created: %d\n", totalProcessesCreated );
 	printf ( "\t2. Total resource requests: %d\n", totalResourcesRequested );
 	printf ( "\t3. Total requests granted: %d\n", totalRequestsGranted );
-	printf ( "\t4. Percentage of requests granted: %f\n", ( totalRequestsGranted / totalResourcesRequested ) );
+	printf ( "\t4. Percentage of requests granted: %f\n", approvalPercentage );
 	printf ( "\t5. Total deadlock avoidance algorithm uses: %d\n", totalSafeStateChecks );
 	printf ( "\t6. Total Resources released: %d", totalResourcesReleased );
 	printf ( "\n" );
@@ -319,10 +579,42 @@ void handle ( int sig_num ) {
 	if ( sig_num == SIGINT || sig_num == SIGALRM ) {
 		printf ( "Signal to terminate was received.\n" );
 		terminateIPC();
+		printReport();
 		kill ( 0, SIGKILL );
 		wait ( NULL );
-		printReport();
 		exit ( 0 );
+	}
+}
+
+// Function print the table showing all currently allocated resources
+void printAllocatedResourcesTable( int num1, int array[][maxResources] ) {
+	int i, j;
+	num1 = totalProcessesCreated;
+	
+	printf ( "Currently Allocated Resources\n" );
+	printf ( "\tR0\tR1\tR2\tR3\tR4\tR5\tR6\tR7\tR8\tR9\tR10\tR11\tR12\tR13\tR14\tR15\tR16\tR17\tR18\tR19\n" );
+	for ( i = 0; i < totalProcessesCreated; ++i ) {
+		printf ( "P%d:\t", i );
+		for ( j = 0; j < 20; ++j ) {
+			printf ( "%d\t", array[i][j] );
+		}
+		printf ( "\n" );
+	}
+}
+
+// Function to print the table showing the max claim vectors for each process
+void printMaxClaimTable( int num1, int array[][maxResources] ){
+	int i, j;
+	num1 = totalProcessesCreated; 
+	
+	printf ( "Max Claim Table\n" );
+	printf ( "\tR0\tR1\tR2\tR3\tR4\tR5\tR6\tR7\tR8\tR9\tR10\tR11\tR12\tR13\tR14\tR15\tR16\tR17\tR18\tR19\n" );
+	for ( i = 0; i < totalProcessesCreated; ++i ) {
+		printf ( "P%d:\t", i );
+		for ( j = 0; j < 20; ++j ) {
+			printf ( "%d\t", array[i][j] );
+		}
+		printf ( "\n" );
 	}
 }
 
@@ -384,7 +676,6 @@ void enqueue ( Queue* queue, int item ) {
 	queue->rear = ( queue->rear + 1 ) % queue->capacity;
 	queue->array[queue->rear] = item;
 	queue->size = queue->size + 1;
-	printf ( "%d enqueued to queue.\n", item );
 }
 
 // Function to remove an item from queue.
