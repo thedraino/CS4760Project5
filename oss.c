@@ -564,13 +564,21 @@ bool isSafeState ( int available[], int maximum[][maxResources], int allot[][max
 void printReport() {
 	double approvalPercentage = totalRequestsGranted / totalResourcesRequested;
 	printf ( "Program Statistics\n" );
+	fprintf ( fp, "Program Statistics\n" );
 	printf ( "\t1. Total processes created: %d\n", totalProcessesCreated );
+	fprintf ( fp, "\t1. Total processes created: %d\n", totalProcessesCreated );
 	printf ( "\t2. Total resource requests: %d\n", totalResourcesRequested );
+	fprintf ( fp, "\t2. Total resource requests: %d\n", totalResourcesRequested );
 	printf ( "\t3. Total requests granted: %d\n", totalRequestsGranted );
+	fprintf ( fp, "\t3. Total requests granted: %d\n", totalRequestsGranted );
 	printf ( "\t4. Percentage of requests granted: %f\n", approvalPercentage );
+	fprintf ( fp, "\t4. Percentage of requests granted: %f\n", approvalPercentage );
 	printf ( "\t5. Total deadlock avoidance algorithm uses: %d\n", totalSafeStateChecks );
+	fprintf ( fp, "\t5. Total deadlock avoidance algorithm uses: %d\n", totalSafeStateChecks );
 	printf ( "\t6. Total Resources released: %d", totalResourcesReleased );
+	fprintf ( fp, "\t6. Total Resources released: %d", totalResourcesReleased );
 	printf ( "\n" );
+	fprintf ( fp, "\n" );
 }
 
 // Function for signal handling.
@@ -578,8 +586,8 @@ void printReport() {
 void handle ( int sig_num ) {
 	if ( sig_num == SIGINT || sig_num == SIGALRM ) {
 		printf ( "Signal to terminate was received.\n" );
-		terminateIPC();
 		printReport();
+		terminateIPC();
 		kill ( 0, SIGKILL );
 		wait ( NULL );
 		exit ( 0 );
