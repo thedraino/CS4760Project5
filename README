@@ -18,6 +18,11 @@ Inluded files:
   - oss.c
   - user.c
   - versionControlLog.txt
+  
+Usage: 
+  1. make
+  2. ./oss
+  Note: No options need to be passed. Alarm it terminate is set at a constant of 2 seconds. 
 
 Unfortunately, I could not get my version of banker's algorithm to work for the 
 deadlock avoidance. As the logfile will show after running the program, it simply 
